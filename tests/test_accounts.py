@@ -151,3 +151,38 @@ def test_channel_read_needs_teams_flag_too(monkeypatch):
     assert "ChannelMessage.Read.All" not in accounts.active_scopes()
     monkeypatch.setenv(accounts.TEAMS_ENV, "1")
     assert "ChannelMessage.Read.All" in accounts.active_scopes()
+
+
+class _FakeApp:
+    """MSAL stand-in: only the base scopes have been consented."""
+
+    def __init__(self):
+        self.asked: list[list[str]] = []
+
+    def get_accounts(self):
+        return [{"username": "user@example.com"}]
+
+    def acquire_token_silent(self, scopes, account):
+        self.asked.append(list(scopes))
+        return {"access_token": "base-token"} if scopes == accounts.SCOPES else None
+
+
+def test_base_tools_survive_flag_before_reconsent(store, monkeypatch):
+    fake = _FakeApp()
+    monkeypatch.setattr(accounts, "_app", lambda: fake)
+    monkeypatch.setenv(accounts.TEAMS_ENV, "1")
+    accounts._save_index(["user@example.com"])
+    assert accounts.get_token("user@example.com") == "base-token"
+    assert fake.asked[0] != accounts.SCOPES and fake.asked[1] == accounts.SCOPES
+
+
+def test_no_fallback_loop_without_flags(store, monkeypatch):
+    fake = _FakeApp()
+    fake.acquire_token_silent = lambda scopes, account: (fake.asked.append(scopes), None)[1]
+    monkeypatch.setattr(accounts, "_app", lambda: fake)
+    for name in (accounts.TEAMS_ENV, accounts.SHAREPOINT_ENV):
+        monkeypatch.delenv(name, raising=False)
+    accounts._save_index(["user@example.com"])
+    with pytest.raises(accounts.AccountError, match="m365_account_add"):
+        accounts.get_token("user@example.com")
+    assert len(fake.asked) == 1

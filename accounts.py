@@ -355,7 +355,14 @@ def get_token(account: str | None = None) -> str:
             raise AccountError(
                 f"No cached credentials for {email}. Run m365_account_add to authorize it."
             )
-        result = app.acquire_token_silent(active_scopes(), account=target)
+        scopes = active_scopes()
+        result = app.acquire_token_silent(scopes, account=target)
+        if (not result or "access_token" not in result) and scopes != SCOPES:
+            # An optional flag was turned on but this account hasn't re-consented
+            # yet. Fall back to the base scopes so Outlook/Calendar/OneDrive keep
+            # working; only the Teams/SharePoint calls fail (403) until the user
+            # re-runs m365_account_add.
+            result = app.acquire_token_silent(SCOPES, account=target)
         _persist_cache()
     if not result or "access_token" not in result:
         detail = (result or {}).get("error_description", "refresh failed")
