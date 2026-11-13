@@ -43,6 +43,8 @@ If your work account shows **"Need admin approval"**, your company's tenant requ
 
 Once IT approves (Enterprise applications → the app → Permissions → Grant admin consent), re-run `m365_account_add`.
 
+**Teams / SharePoint (optional).** If you turned on `M365_ENABLE_TEAMS` or `M365_ENABLE_SHAREPOINT`, add these to the list you send IT: `Chat.Read`, `ChatMessage.Send`, `Team.ReadBasic.All`, `Channel.ReadBasic.All`, `ChannelMessage.Send` (Teams) and `Sites.Read.All` (SharePoint). `ChannelMessage.Read.All` (only with `M365_ENABLE_TEAMS_CHANNEL_READ`) **always** needs admin consent. You don't have to add them to the app registration by hand: Microsoft asks for them at sign-in. If IT refuses, turn the flags off and the base tools keep working.
+
 Done — skip to [§6](#6-set-a-default-account-optional) and [§7](#7-verify). You never needed §1–§4.
 
 **Why sharing one Client ID is safe.** This is a *public client* app: there is no app secret at all. The Client ID only names the app; every member signs in with their own Microsoft account, gets their own refresh token, and that token never leaves their machine. The shared app grants no cross-account access.

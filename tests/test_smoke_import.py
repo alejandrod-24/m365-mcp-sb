@@ -33,3 +33,27 @@ def test_all_tools_registered_with_schemas() -> None:
     search = next(t for t in tools if t.name == "outlook_search")
     assert "query" in search.parameters["properties"]
     assert "kwargs" not in search.parameters["properties"]
+
+
+def _tool_names(env: dict) -> set[str]:
+    """Import the server in a clean subprocess with the given flags."""
+    import json, os, subprocess
+    code = ("import asyncio, json, server; "
+            "print(json.dumps(sorted(t.name for t in asyncio.run(server.mcp.list_tools()))))")
+    base = {k: v for k, v in os.environ.items() if not k.startswith("M365_ENABLE_")}
+    out = subprocess.run([sys.executable, "-c", code], cwd=ROOT, env={**base, **env},
+                         capture_output=True, text=True, check=True)
+    return set(json.loads(out.stdout.strip().splitlines()[-1]))
+
+
+def test_optional_families_hidden_by_default() -> None:
+    names = _tool_names({})
+    assert not any(n.startswith(("teams_", "sharepoint_")) for n in names)
+
+
+def test_optional_families_registered_when_enabled() -> None:
+    names = _tool_names({"M365_ENABLE_TEAMS": "1", "M365_ENABLE_SHAREPOINT": "1"})
+    assert len(names) == 35 + 6 + 8
+    assert "teams_read_channel" not in names  # needs its own admin-consent flag
+    names = _tool_names({"M365_ENABLE_TEAMS": "1", "M365_ENABLE_TEAMS_CHANNEL_READ": "1"})
+    assert "teams_read_channel" in names

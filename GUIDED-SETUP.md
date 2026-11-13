@@ -28,7 +28,7 @@ The connector signs in through a Microsoft Entra app, identified by its **Applic
 ### 1. Get the code (Claude Code)
 
 ```bash
-cd ~ && if [ -d microsoft-365-mcp/.git ]; then git -C microsoft-365-mcp pull --ff-only; else git clone https://github.com/adelaidasofia/microsoft-365-mcp.git; fi
+cd ~ && if [ -d microsoft-365-mcp/.git ]; then git -C microsoft-365-mcp pull --ff-only; else git clone https://github.com/alejandrod-24/m365-mcp-sb.git microsoft-365-mcp; fi
 ```
 
 On Windows, see [Windows](#windows) below.
@@ -74,7 +74,7 @@ A running Claude only loads new connectors when it starts. The next session will
 There is no Windows installer yet, so do its steps yourself in PowerShell:
 
 ```powershell
-cd ~; git clone https://github.com/adelaidasofia/microsoft-365-mcp.git
+cd ~; git clone https://github.com/alejandrod-24/m365-mcp-sb.git microsoft-365-mcp
 py -3 -m venv microsoft-365-mcp\.venv
 .\microsoft-365-mcp\.venv\Scripts\python.exe -m pip install -r .\microsoft-365-mcp\requirements.txt
 claude.cmd mcp add microsoft-365 -s user -e M365_CLIENT_ID=<application client id> -- "$HOME\microsoft-365-mcp\.venv\Scripts\python.exe" "$HOME\microsoft-365-mcp\server.py"

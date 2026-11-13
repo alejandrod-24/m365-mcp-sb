@@ -124,3 +124,30 @@ def test_posix_defaults_to_keyring(monkeypatch, tmp_path):
     monkeypatch.setattr(accounts, "DEFAULT_TOKEN_FILE", tmp_path / "nope.json")  # absent
     monkeypatch.setattr(accounts.os, "name", "posix")
     assert accounts._token_file() is None  # → keyring backend
+
+
+def test_optional_scopes_off_by_default(monkeypatch):
+    for name in (accounts.TEAMS_ENV, accounts.TEAMS_CHANNEL_READ_ENV, accounts.SHAREPOINT_ENV):
+        monkeypatch.delenv(name, raising=False)
+    assert accounts.active_scopes() == accounts.SCOPES
+
+
+def test_optional_scopes_follow_flags(monkeypatch):
+    monkeypatch.setenv(accounts.TEAMS_ENV, "1")
+    monkeypatch.setenv(accounts.SHAREPOINT_ENV, "true")
+    monkeypatch.delenv(accounts.TEAMS_CHANNEL_READ_ENV, raising=False)
+    scopes = accounts.active_scopes()
+    assert set(accounts.TEAMS_SCOPES) <= set(scopes)
+    assert "Sites.Read.All" in scopes
+    # Admin-consent scope stays out unless its own flag is on.
+    assert "ChannelMessage.Read.All" not in scopes
+    # Least privilege: never write access to SharePoint.
+    assert not {"Sites.ReadWrite.All", "Files.ReadWrite.All"} & set(scopes)
+
+
+def test_channel_read_needs_teams_flag_too(monkeypatch):
+    monkeypatch.delenv(accounts.TEAMS_ENV, raising=False)
+    monkeypatch.setenv(accounts.TEAMS_CHANNEL_READ_ENV, "1")
+    assert "ChannelMessage.Read.All" not in accounts.active_scopes()
+    monkeypatch.setenv(accounts.TEAMS_ENV, "1")
+    assert "ChannelMessage.Read.All" in accounts.active_scopes()

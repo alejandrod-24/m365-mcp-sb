@@ -1,9 +1,9 @@
 {
   "name": "microsoft-365-mcp",
-  "description": "Multi-account, token-efficient MCP for Outlook mail + Calendar + OneDrive via Microsoft Graph. 33 tools, Keychain-backed tokens.",
+  "description": "Multi-account, token-efficient MCP for Outlook mail + Calendar + OneDrive (+ opt-in Teams and read-only SharePoint) via Microsoft Graph. 35 base tools, Keychain-backed tokens.",
   "version": "0.1.0",
   "author": {
-    "name": "Mycelium AI",
-    "url": "https://myceliumai.co"
+    "name": "alejandrod-24",
+    "url": "https://github.com/alejandrod-24"
   }
 }

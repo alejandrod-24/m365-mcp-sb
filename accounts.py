@@ -56,6 +56,57 @@ SCOPES = [
     "User.Read",
 ]
 
+# --- Optional scope groups (Teams / SharePoint) -----------------------------
+# OFF by default. Each group is opt-in via an env flag so an install that only
+# uses Outlook/Calendar/OneDrive never asks for these permissions — a tenant
+# that blocks them must not break the base login. Turning a flag on later
+# requires re-running m365_account_add (the cached token lacks the new scopes).
+#
+# None of these need tenant-admin consent EXCEPT ChannelMessage.Read.All,
+# which is why reading channel messages has its own flag.
+TEAMS_ENV = "M365_ENABLE_TEAMS"
+TEAMS_CHANNEL_READ_ENV = "M365_ENABLE_TEAMS_CHANNEL_READ"
+SHAREPOINT_ENV = "M365_ENABLE_SHAREPOINT"
+
+TEAMS_SCOPES = [
+    "Chat.Read",              # list chats + read 1:1 / group chat messages
+    "ChatMessage.Send",       # send in chats
+    "Team.ReadBasic.All",     # list joined teams
+    "Channel.ReadBasic.All",  # list channels
+    "ChannelMessage.Send",    # post / reply in channels
+]
+TEAMS_CHANNEL_READ_SCOPES = ["ChannelMessage.Read.All"]  # admin consent required
+SHAREPOINT_SCOPES = ["Sites.Read.All"]  # read-only: sites, libraries, lists
+
+
+def _flag(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def teams_enabled() -> bool:
+    return _flag(TEAMS_ENV)
+
+
+def teams_channel_read_enabled() -> bool:
+    return _flag(TEAMS_ENV) and _flag(TEAMS_CHANNEL_READ_ENV)
+
+
+def sharepoint_enabled() -> bool:
+    return _flag(SHAREPOINT_ENV)
+
+
+def active_scopes() -> list[str]:
+    """Base SCOPES plus whichever optional groups are enabled by env flag."""
+    scopes = list(SCOPES)
+    if teams_enabled():
+        scopes += TEAMS_SCOPES
+    if teams_channel_read_enabled():
+        scopes += TEAMS_CHANNEL_READ_SCOPES
+    if sharepoint_enabled():
+        scopes += SHAREPOINT_SCOPES
+    return scopes
+
+
 DEFAULT_ACCOUNT_ENV = "M365_DEFAULT_ACCOUNT"
 CLIENT_ID_ENV = "M365_CLIENT_ID"
 TENANT_ENV = "M365_TENANT_ID"
@@ -251,7 +302,7 @@ def add_account(method: str = "interactive") -> dict:
     app = _app()
     if method == "device_code":
         global _pending_device_flow
-        flow = app.initiate_device_flow(scopes=SCOPES)
+        flow = app.initiate_device_flow(scopes=active_scopes())
         if "user_code" not in flow:
             raise AccountError(f"Device flow failed to start: {flow.get('error_description', flow)}")
         _pending_device_flow = flow
@@ -262,7 +313,7 @@ def add_account(method: str = "interactive") -> dict:
             "expires_in": flow.get("expires_in"),
             "next_step": "Open the URL, enter the code, sign in, then call m365_account_complete.",
         }
-    result = app.acquire_token_interactive(SCOPES, prompt="select_account")
+    result = app.acquire_token_interactive(active_scopes(), prompt="select_account")
     return _register(result)
 
 
@@ -304,12 +355,13 @@ def get_token(account: str | None = None) -> str:
             raise AccountError(
                 f"No cached credentials for {email}. Run m365_account_add to authorize it."
             )
-        result = app.acquire_token_silent(SCOPES, account=target)
+        result = app.acquire_token_silent(active_scopes(), account=target)
         _persist_cache()
     if not result or "access_token" not in result:
         detail = (result or {}).get("error_description", "refresh failed")
         raise AccountError(
             f"Could not refresh token for {email}: {detail}. "
-            "Re-run m365_account_add for this account."
+            "Re-run m365_account_add for this account (required after turning on "
+            f"{TEAMS_ENV}, {TEAMS_CHANNEL_READ_ENV} or {SHAREPOINT_ENV})."
         )
     return result["access_token"]

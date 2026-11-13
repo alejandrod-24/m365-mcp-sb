@@ -2,7 +2,7 @@
 #
 # One-command install for microsoft-365-mcp.
 #
-#   cd ~ && git clone https://github.com/adelaidasofia/microsoft-365-mcp.git
+#   cd ~ && git clone https://github.com/alejandrod-24/m365-mcp-sb.git microsoft-365-mcp
 #   bash ~/microsoft-365-mcp/install.sh
 #
 # Builds an isolated venv next to this script, installs the dependencies, asks

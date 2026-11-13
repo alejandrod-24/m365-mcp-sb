@@ -1,4 +1,15 @@
-# microsoft-365-mcp
+# microsoft-365-mcp (+ Teams & SharePoint)
+
+> **This is a modified copy** of [adelaidasofia/microsoft-365-mcp](https://github.com/adelaidasofia/microsoft-365-mcp)
+> by Adelaida Diaz-Roa, MIT-licensed (see [LICENSE](LICENSE)). It adds opt-in
+> Microsoft Teams and read-only SharePoint tools and removes the install ping.
+> It is not affiliated with or endorsed by the original author. Issues with
+> this copy go here, not upstream.
+>
+> **Already using the original?** This copy is a drop-in replacement (same
+> folder name, same keychain entry, your login keeps working):
+> `git -C ~/microsoft-365-mcp remote set-url origin https://github.com/alejandrod-24/m365-mcp-sb.git && git -C ~/microsoft-365-mcp pull --ff-only`
+
 
 Multi-account, token-efficient MCP for **Outlook mail + Calendar + OneDrive**
 via Microsoft Graph. The Microsoft sibling of
@@ -70,15 +81,36 @@ Paste this repository's link into Claude Code and say you want to connect your e
 - `onedrive_permission_delete` — revoke access
 
 Outlook uses folders + categories rather than Gmail labels; folder tools cover
-the label workflows. SharePoint sites, Teams chats, and mail attachments are
-deliberate v2 scope (`Sites.Read.All`, `Chat.Read`).
+the label workflows.
+
+### Teams (opt-in, 6 + 1 tools) — `M365_ENABLE_TEAMS=1`
+- `teams_list_chats` — 1:1, group and meeting chats, most recent first, with members
+- `teams_read_chat` — latest messages of a chat as plain text
+- `teams_send_chat_message` — send in a chat (`dry_run=True` previews)
+- `teams_list_teams` — teams you belong to
+- `teams_list_channels` — channels of a team
+- `teams_send_channel_message` — post in a channel or reply to a post (`dry_run`)
+- `teams_read_channel` — read channel posts and threads. **Extra flag**
+  `M365_ENABLE_TEAMS_CHANNEL_READ=1`: it needs `ChannelMessage.Read.All`, which
+  only a tenant admin can consent.
+
+### SharePoint (opt-in, read-only, 8 tools) — `M365_ENABLE_SHAREPOINT=1`
+- `sharepoint_search_sites` / `sharepoint_get_site` (paste a browser URL)
+- `sharepoint_list_drives` — document libraries of a site
+- `sharepoint_list_folder` / `sharepoint_search_files` / `sharepoint_read_file`
+- `sharepoint_list_lists` / `sharepoint_list_items` — SharePoint lists and their rows
+
+Both families are **off by default** so a tenant that blocks their permissions
+never breaks the Outlook/Calendar/OneDrive login. After turning a flag on, run
+`m365_account_add` again so the token picks up the new scopes. Teams and
+SharePoint exist only on work/school accounts.
 
 ## Install
 
 **Fastest path — one script, no manual wiring:**
 
 ```bash
-git clone https://github.com/adelaidasofia/microsoft-365-mcp.git
+git clone https://github.com/alejandrod-24/m365-mcp-sb.git microsoft-365-mcp
 bash microsoft-365-mcp/install.sh
 ```
 
@@ -93,7 +125,7 @@ and OAuth your accounts.
 <summary>Manual install</summary>
 
 ```bash
-git clone https://github.com/adelaidasofia/microsoft-365-mcp.git
+git clone https://github.com/alejandrod-24/m365-mcp-sb.git microsoft-365-mcp
 cd microsoft-365-mcp
 pip install -e .
 ```
@@ -129,7 +161,9 @@ claude mcp add -s user microsoft-365 python3 /absolute/path/to/microsoft-365-mcp
 | `M365_DEFAULT_ACCOUNT` | Default account email (else first authorized) |
 | `M365_TOKEN_FILE` | Force file token storage (auto on Windows) |
 | `M365_AUDIT_IO` | `1` = log full tool input/output payloads (default: summarized) |
-| `MYCELIUM_NO_PING` | `1` = disable the one-time anonymous install ping |
+| `M365_ENABLE_TEAMS` | `1` = add the Teams tools (chats + channels). Work/school accounts only |
+| `M365_ENABLE_TEAMS_CHANNEL_READ` | `1` = also read channel posts (needs tenant-admin consent) |
+| `M365_ENABLE_SHAREPOINT` | `1` = add the read-only SharePoint tools |
 
 ## Observability
 
@@ -140,9 +174,7 @@ contents are NOT logged unless you opt in with `M365_AUDIT_IO=1`.
 
 ## Telemetry
 
-On first session start after install, the plugin sends a single anonymous
-`{plugin, version}` ping to myceliumai.co (no PII, one sentinel file per
-machine). Set `MYCELIUM_NO_PING=1` to disable.
+None. The upstream install ping was removed in this copy.
 
 ## Tests
 

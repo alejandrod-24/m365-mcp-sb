@@ -1,20 +1,20 @@
 {
   "manifest_version": "0.4",
   "name": "microsoft-365-mcp",
-  "display_name": "FastMCP server exposing Microsoft 365 (Outlook mail, Calendar, OneDrive) tools v",
+  "display_name": "FastMCP server exposing Microsoft 365 (Outlook mail, Calendar, OneDrive, Teams, SharePoint) tools v",
   "version": "0.1.0",
-  "description": "FastMCP server exposing Microsoft 365 (Outlook mail, Calendar, OneDrive) tools via Microsoft Graph.",
+  "description": "FastMCP server exposing Microsoft 365 (Outlook mail, Calendar, OneDrive, Teams, SharePoint) tools via Microsoft Graph.",
   "author": {
-    "name": "adelaidasofia",
-    "url": "https://github.com/adelaidasofia"
+    "name": "alejandrod-24 (modified copy of adelaidasofia/microsoft-365-mcp)",
+    "url": "https://github.com/alejandrod-24"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/adelaidasofia/microsoft-365-mcp.git"
+    "url": "https://github.com/alejandrod-24/m365-mcp-sb.git"
   },
-  "homepage": "https://github.com/adelaidasofia/microsoft-365-mcp",
-  "documentation": "https://github.com/adelaidasofia/microsoft-365-mcp#readme",
-  "support": "https://github.com/adelaidasofia/microsoft-365-mcp/issues",
+  "homepage": "https://github.com/alejandrod-24/m365-mcp-sb",
+  "documentation": "https://github.com/alejandrod-24/m365-mcp-sb#readme",
+  "support": "https://github.com/alejandrod-24/m365-mcp-sb/issues",
   "license": "MIT",
   "keywords": [
     "mcp",

@@ -29,6 +29,8 @@ import calendar_tools
 import graph
 import mail_tools
 import onedrive_tools
+import sharepoint_tools
+import teams_tools
 
 mcp = FastMCP("microsoft-365")
 
@@ -574,6 +576,162 @@ def onedrive_permission_delete(
     return onedrive_tools.permission_delete(
         item_id=item_id, permission_id=permission_id, account=account,
     )
+
+
+# ---------------------------------------------------------------------------
+# Microsoft Teams — opt-in (M365_ENABLE_TEAMS=1). Work/school accounts only.
+# ---------------------------------------------------------------------------
+
+if accounts.teams_enabled():
+
+    @_tool
+    def teams_list_chats(account: str | None = None, limit: int = 20) -> list[dict]:
+        """List the user's Teams chats (1:1, group, meeting), most recent
+        first, with member names. Use the id with teams_read_chat."""
+        return teams_tools.list_chats(account=account, limit=limit)
+
+    @_tool
+    def teams_read_chat(chat_id: str, account: str | None = None, limit: int = 20) -> list[dict]:
+        """Read the latest messages of a chat (newest first) as plain text.
+        System events are dropped. Max 50."""
+        return teams_tools.read_chat(chat_id=chat_id, account=account, limit=limit)
+
+    @_tool
+    def teams_send_chat_message(
+        chat_id: str,
+        text: str,
+        account: str | None = None,
+        dry_run: bool = False,
+    ) -> dict:
+        """Send a message in a Teams chat. DESTRUCTIVE — irreversible.
+        Confirm the text with the user first; dry_run=True previews."""
+        return teams_tools.send_chat_message(
+            chat_id=chat_id, text=text, account=account, dry_run=dry_run,
+        )
+
+    @_tool
+    def teams_list_teams(account: str | None = None) -> list[dict]:
+        """List the teams the user belongs to."""
+        return teams_tools.list_teams(account=account)
+
+    @_tool
+    def teams_list_channels(team_id: str, account: str | None = None) -> list[dict]:
+        """List the channels of a team (get team_id from teams_list_teams)."""
+        return teams_tools.list_channels(team_id=team_id, account=account)
+
+    @_tool
+    def teams_send_channel_message(
+        team_id: str,
+        channel_id: str,
+        text: str,
+        account: str | None = None,
+        reply_to_message_id: str | None = None,
+        dry_run: bool = False,
+    ) -> dict:
+        """Post in a Teams channel, or reply to a post (reply_to_message_id).
+        DESTRUCTIVE — irreversible. Confirm with the user; dry_run=True previews."""
+        return teams_tools.send_channel_message(
+            team_id=team_id, channel_id=channel_id, text=text, account=account,
+            reply_to_message_id=reply_to_message_id, dry_run=dry_run,
+        )
+
+if accounts.teams_channel_read_enabled():
+
+    @_tool
+    def teams_read_channel(
+        team_id: str,
+        channel_id: str,
+        account: str | None = None,
+        limit: int = 20,
+        include_replies: bool = False,
+    ) -> list[dict]:
+        """Read the latest posts of a Teams channel as plain text.
+        include_replies=True expands each thread. Requires the tenant admin to
+        have consented ChannelMessage.Read.All."""
+        return teams_tools.read_channel(
+            team_id=team_id, channel_id=channel_id, account=account,
+            limit=limit, include_replies=include_replies,
+        )
+
+
+# ---------------------------------------------------------------------------
+# SharePoint — opt-in (M365_ENABLE_SHAREPOINT=1), read-only.
+# ---------------------------------------------------------------------------
+
+if accounts.sharepoint_enabled():
+
+    @_tool
+    def sharepoint_search_sites(query: str = "*", account: str | None = None, limit: int = 20) -> list[dict]:
+        """Find SharePoint sites by keyword ('*' = all sites the user can see)."""
+        return sharepoint_tools.search_sites(query=query, account=account, limit=limit)
+
+    @_tool
+    def sharepoint_get_site(url: str, account: str | None = None) -> dict:
+        """Resolve a SharePoint URL pasted from the browser
+        (https://<tenant>.sharepoint.com/sites/<name>/...) to its site id."""
+        return sharepoint_tools.get_site(url=url, account=account)
+
+    @_tool
+    def sharepoint_list_drives(site_id: str, account: str | None = None) -> list[dict]:
+        """List a site's document libraries. Use the drive id with
+        sharepoint_list_folder / sharepoint_search_files."""
+        return sharepoint_tools.list_drives(site_id=site_id, account=account)
+
+    @_tool
+    def sharepoint_list_folder(
+        drive_id: str,
+        folder_id: str = "root",
+        account: str | None = None,
+        limit: int = 50,
+    ) -> list[dict]:
+        """List a folder in a document library ('root' = library root)."""
+        return sharepoint_tools.list_folder(
+            drive_id=drive_id, folder_id=folder_id, account=account, limit=limit,
+        )
+
+    @_tool
+    def sharepoint_search_files(
+        drive_id: str,
+        query: str,
+        account: str | None = None,
+        limit: int = 10,
+    ) -> list[dict]:
+        """Search files (names + content) inside one document library."""
+        return sharepoint_tools.search_files(
+            drive_id=drive_id, query=query, account=account, limit=limit,
+        )
+
+    @_tool
+    def sharepoint_read_file(
+        drive_id: str,
+        item_id: str,
+        account: str | None = None,
+        include_content: bool = False,
+        max_chars: int = 50_000,
+    ) -> dict:
+        """Read a file's metadata; include_content=True also returns its text
+        (text files only; Office/PDF return a size placeholder)."""
+        return sharepoint_tools.read_file(
+            drive_id=drive_id, item_id=item_id, account=account,
+            include_content=include_content, max_chars=max_chars,
+        )
+
+    @_tool
+    def sharepoint_list_lists(site_id: str, account: str | None = None) -> list[dict]:
+        """List a site's SharePoint lists (hidden/system lists skipped)."""
+        return sharepoint_tools.list_lists(site_id=site_id, account=account)
+
+    @_tool
+    def sharepoint_list_items(
+        site_id: str,
+        list_id: str,
+        account: str | None = None,
+        limit: int = 50,
+    ) -> list[dict]:
+        """Read the rows of a SharePoint list with their column values."""
+        return sharepoint_tools.list_items(
+            site_id=site_id, list_id=list_id, account=account, limit=limit,
+        )
 
 
 if __name__ == "__main__":

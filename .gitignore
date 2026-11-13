@@ -8,3 +8,5 @@ __pycache__/
 *.log.jsonl
 # Generated MCP bundle (uploaded to GitHub Releases, not tracked in git)
 *.mcpb
+.venv/
+.pytest_cache/
